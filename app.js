@@ -714,7 +714,9 @@ function renderAll(){
   renderCards();renderLista();renderFixed();
   renderChartCats();renderChartMensual();
   updateFilterCat();fillMonthSelect();
-  renderBudgets();icons();
+  renderBudgets();
+  if($('tab-annual')?.classList.contains('active')){fillYearSelect();renderAnual();}
+  icons();
 }
 
 /* --- TABS --- */
@@ -730,6 +732,7 @@ function initTabs(){
       if(btn.dataset.tab==='settings') renderCatList();
       if(btn.dataset.tab==='budget'){fillMonthSelect();renderBudgets();}
       if(btn.dataset.tab==='shared') loadEspacio();
+      if(btn.dataset.tab==='annual'){fillYearSelect();renderAnual();}
       icons();
     });
   });
@@ -1029,4 +1032,297 @@ function initAuth(){
   // SW
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
   icons();
+})();
+
+/* ============================================================
+   BALANCE ANUAL
+============================================================ */
+let chartAnual = null;
+
+function fillYearSelect() {
+  const sel = $('annual-year'); if(!sel) return;
+  const years = [...new Set(txs.map(t=>t.date.slice(0,4)))].sort((a,b)=>b-a);
+  const cur = new Date().getFullYear().toString();
+  if(!years.includes(cur)) years.unshift(cur);
+  const prev = sel.value;
+  sel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(prev && years.includes(prev)) sel.value = prev;
+}
+
+function renderAnual() {
+  const year = $('annual-year')?.value || new Date().getFullYear().toString();
+  const tYear = txs.filter(t=>t.date.startsWith(year));
+  const ing   = tYear.filter(t=>t.type==='ingreso').reduce((s,t)=>s+t.amount,0);
+  const gas   = tYear.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);
+  const bal   = ing-gas;
+  const gasExtra = tYear.filter(t=>t.type==='gasto'&&!t.fixedId).reduce((s,t)=>s+t.amount,0);
+  const gasFijo  = tYear.filter(t=>t.type==='gasto'&&t.fixedId).reduce((s,t)=>s+t.amount,0);
+
+  // Métricas
+  $('annual-metrics').innerHTML = `
+    <div class="r-metric"><span class="r-metric-label">Ingresos ${year}</span><span class="r-metric-value g">${fmt(ing)}</span><span class="r-metric-sub">${tYear.filter(t=>t.type==='ingreso').length} movimientos</span></div>
+    <div class="r-metric"><span class="r-metric-label">Gastos ${year}</span><span class="r-metric-value r">${fmt(gas)}</span><span class="r-metric-sub">${tYear.filter(t=>t.type==='gasto').length} movimientos</span></div>
+    <div class="r-metric"><span class="r-metric-label">Balance ${year}</span><span class="r-metric-value ${bal>=0?'p':'rr'}">${bal<0?'-':''}${fmt(bal)}</span><span class="r-metric-sub">${bal>=0?'Positivo ✓':'Déficit ✗'}</span></div>
+    <div class="r-metric"><span class="r-metric-label">Ahorro promedio</span><span class="r-metric-value p">${fmt(bal/12)}/mes</span><span class="r-metric-sub">promedio mensual</span></div>`;
+
+  // Gráfica anual
+  const MM = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ingData = MM.map((_,i)=>{
+    const m = `${year}-${String(i+1).padStart(2,'0')}`;
+    return +txs.filter(t=>t.type==='ingreso'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0).toFixed(2);
+  });
+  const gasData = MM.map((_,i)=>{
+    const m = `${year}-${String(i+1).padStart(2,'0')}`;
+    return +txs.filter(t=>t.type==='gasto'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0).toFixed(2);
+  });
+
+  if(chartAnual){chartAnual.destroy();chartAnual=null;}
+  const canvas=$('chart-annual');
+  if(canvas){
+    canvas.style.display='block';
+    const tc=textColor();
+    chartAnual=new Chart(canvas,{type:'bar',data:{labels:MM,datasets:[
+      {label:'Ingresos',data:ingData,backgroundColor:'#00E5A0',borderRadius:4},
+      {label:'Gastos',data:gasData,backgroundColor:'#FF4D6A',borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},color:tc}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:tc}},y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},color:tc,callback:v=>fmt(v)}}}}});
+  }
+
+  // Fijos vs Variables
+  $('annual-breakdown-content').innerHTML = `
+    <div class="sim-detail-row"><span>Gastos fijos (recurrentes)</span><span class="sim-detail-val" style="color:var(--amber)">${fmt(gasFijo)}</span></div>
+    <div class="sim-detail-row"><span>Gastos variables (extras)</span><span class="sim-detail-val" style="color:var(--red)">${fmt(gasExtra)}</span></div>
+    <div class="sim-detail-row"><span>% que son extras</span><span class="sim-detail-val">${gas>0?(gasExtra/gas*100).toFixed(1):0}%</span></div>
+    <div class="sim-detail-row"><span>Promedio gasto extra/mes</span><span class="sim-detail-val">${fmt(gasExtra/12)}</span></div>`;
+
+  // Highlights
+  const monthData = MM.map((name,i)=>{
+    const m=`${year}-${String(i+1).padStart(2,'0')}`;
+    const mIng=txs.filter(t=>t.type==='ingreso'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0);
+    const mGas=txs.filter(t=>t.type==='gasto'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0);
+    return {name,ing:mIng,gas:mGas,bal:mIng-mGas};
+  }).filter(m=>m.ing>0||m.gas>0);
+
+  if(monthData.length){
+    const bestMonth  = monthData.reduce((a,b)=>b.bal>a.bal?b:a);
+    const worstMonth = monthData.reduce((a,b)=>b.bal<a.bal?b:a);
+    const maxGas     = Math.max(...monthData.map(m=>m.gas));
+
+    $('annual-highlights-content').innerHTML = monthData.map(m=>`
+      <div class="annual-month-row">
+        <span class="annual-month-name">${m.name}</span>
+        <div class="annual-month-bar-wrap">
+          <div class="annual-month-bar-track">
+            <div class="annual-month-bar-fill" style="width:${maxGas>0?(m.gas/maxGas*100).toFixed(1):0}%;background:${m.bal>=0?'#00E5A0':'#FF4D6A'}"></div>
+          </div>
+          <div class="annual-month-amounts">
+            <span style="color:var(--green)">+${fmt(m.ing)}</span>
+            <span style="color:var(--red)">-${fmt(m.gas)}</span>
+            <span style="color:${m.bal>=0?'var(--accent)':'var(--red)'}">${m.bal>=0?'+':''}${fmt(m.bal)}</span>
+          </div>
+        </div>
+        ${m.name===bestMonth.name?'<span class="annual-badge best">Mejor</span>':''}
+        ${m.name===worstMonth.name&&worstMonth.bal<0?'<span class="annual-badge worst">Peor</span>':''}
+      </div>`).join('');
+  } else {
+    $('annual-highlights-content').innerHTML='<p style="font-size:.82rem;color:var(--text3)">Sin datos para este año.</p>';
+  }
+
+  // Proyección gastos fijos
+  const fxTotalMes = fixedExps.filter(f=>f.active).reduce((s,f)=>s+f.amount,0);
+  const projEl = $('fixed-annual-projection');
+  if(projEl){
+    if(!fixedExps.filter(f=>f.active).length){
+      projEl.innerHTML='<p style="font-size:.82rem;color:var(--text3)">No tienes gastos fijos configurados.</p>';
+    } else {
+      const totalAnual = fxTotalMes*12;
+      projEl.innerHTML = `
+        <div class="fixed-proj-item" style="background:var(--accent-dim);border-color:rgba(124,107,255,.3);margin-bottom:.75rem">
+          <div><div class="fixed-proj-name" style="color:var(--accent)">Total para vivir</div><div class="fixed-proj-month" style="color:var(--accent)">${fmt(fxTotalMes)}/mes</div></div>
+          <div class="fixed-proj-vals"><div class="fixed-proj-year" style="color:var(--accent)">${fmt(totalAnual)}/año</div></div>
+        </div>` +
+        fixedExps.filter(f=>f.active).map(fx=>`
+        <div class="fixed-proj-item">
+          <div><div class="fixed-proj-name">${getEmoji(fx.cat)} ${esc(fx.desc)}</div><div class="fixed-proj-month">${fmt(fx.amount)}/mes</div></div>
+          <div class="fixed-proj-vals"><div class="fixed-proj-year">${fmt(fx.amount*12)}/año</div></div>
+        </div>`).join('');
+    }
+  }
+
+  renderForecast();
+  icons();
+}
+
+/* ============================================================
+   PRONÓSTICO
+============================================================ */
+function renderForecast() {
+  const foreEl = $('forecast-metrics'); if(!foreEl) return;
+
+  // Promedio de los últimos 3 meses
+  const meses3 = [];
+  for(let i=1;i<=3;i++){
+    const d=new Date(); d.setMonth(d.getMonth()-i);
+    meses3.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+
+  const avgIng = meses3.map(m=>txs.filter(t=>t.type==='ingreso'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0)).reduce((a,b)=>a+b,0)/3;
+  const avgGas = meses3.map(m=>txs.filter(t=>t.type==='gasto'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0)).reduce((a,b)=>a+b,0)/3;
+  const avgBal = avgIng-avgGas;
+  const ahorro6  = avgBal*6;
+  const ahorro12 = avgBal*12;
+
+  foreEl.innerHTML = `
+    <div class="r-metric"><span class="r-metric-label">Ingreso estimado</span><span class="r-metric-value g">${fmt(avgIng)}</span><span class="r-metric-sub">próximo mes</span></div>
+    <div class="r-metric"><span class="r-metric-label">Gasto estimado</span><span class="r-metric-value r">${fmt(avgGas)}</span><span class="r-metric-sub">próximo mes</span></div>
+    <div class="r-metric"><span class="r-metric-label">Ahorro en 6 meses</span><span class="r-metric-value ${ahorro6>=0?'p':'rr'}">${fmt(ahorro6)}</span><span class="r-metric-sub">si mantienes el ritmo</span></div>
+    <div class="r-metric"><span class="r-metric-label">Ahorro en 1 año</span><span class="r-metric-value ${ahorro12>=0?'p':'rr'}">${fmt(ahorro12)}</span><span class="r-metric-sub">proyección anual</span></div>`;
+}
+
+/* ============================================================
+   SIMULADOR DE DECISIONES
+============================================================ */
+function initSimulator() {
+  const btn = $('btn-simulate'); if(!btn) return;
+  btn.addEventListener('click',()=>{
+    const op1Name = $('sim-op1-name').value.trim()||'Opción A';
+    const op1Cost = parseFloat($('sim-op1-cost').value)||0;
+    const op1Init = parseFloat($('sim-op1-init').value)||0;
+    const op2Name = $('sim-op2-name').value.trim()||'Opción B';
+    const op2Cost = parseFloat($('sim-op2-cost').value)||0;
+    const op2Init = parseFloat($('sim-op2-init').value)||0;
+    const months  = parseInt($('sim-months').value)||12;
+
+    const total1 = op1Init + op1Cost*months;
+    const total2 = op2Init + op2Cost*months;
+    const diff   = Math.abs(total1-total2);
+    const winner = total1<=total2 ? op1Name : op2Name;
+    const loser  = total1<=total2 ? op2Name : op1Name;
+
+    const res = $('sim-result');
+    res.style.display='block';
+    res.innerHTML=`
+      <div class="sim-winner">
+        <div class="sim-winner-label">Mejor opción en ${months} meses</div>
+        <div class="sim-winner-name">✓ ${esc(winner)}</div>
+        <div class="sim-winner-save">Ahorras ${fmt(diff)} vs ${esc(loser)}</div>
+      </div>
+      <div class="sim-detail-row"><span>${esc(op1Name)} — Total</span><span class="sim-detail-val">${fmt(total1)}</span></div>
+      <div class="sim-detail-row"><span style="padding-left:1rem;font-size:.78rem;color:var(--text3)">Inicial: ${fmt(op1Init)} + ${fmt(op1Cost)}/mes × ${months}</span><span></span></div>
+      <div class="sim-detail-row"><span>${esc(op2Name)} — Total</span><span class="sim-detail-val">${fmt(total2)}</span></div>
+      <div class="sim-detail-row"><span style="padding-left:1rem;font-size:.78rem;color:var(--text3)">Inicial: ${fmt(op2Init)} + ${fmt(op2Cost)}/mes × ${months}</span><span></span></div>
+      <div class="sim-detail-row"><span>Diferencia</span><span class="sim-detail-val" style="color:var(--green)">${fmt(diff)}</span></div>`;
+  });
+}
+
+/* ============================================================
+   ASISTENTE IA
+============================================================ */
+async function askAI(question) {
+  const input = $('ai-input');
+  const msgs  = $('ai-messages');
+  if(!msgs) return;
+
+  const q = question || (input?.value.trim());
+  if(!q) return;
+  if(input) input.value='';
+
+  // Mensaje del usuario
+  msgs.innerHTML += `
+    <div class="ai-msg ai-msg--user">
+      <div class="ai-bubble">${esc(q)}</div>
+      <div class="ai-avatar user">Yo</div>
+    </div>`;
+
+  // Loading
+  const loadId = 'ai-load-'+Date.now();
+  msgs.innerHTML += `<div class="ai-msg" id="${loadId}"><div class="ai-avatar">K</div><div class="ai-bubble loading">Analizando tus datos...</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Contexto financiero del usuario
+  const ing   = txs.filter(t=>t.type==='ingreso').reduce((s,t)=>s+t.amount,0);
+  const gas   = txs.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);
+  const bal   = ing-gas;
+  const bycat = {};
+  txs.filter(t=>t.type==='gasto').forEach(t=>{bycat[t.cat]=(bycat[t.cat]||0)+t.amount;});
+  const topCats = Object.entries(bycat).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([c,a])=>`${c}: ${fmt(a)}`).join(', ');
+  const meses3  = [];
+  for(let i=1;i<=3;i++){const d=new Date();d.setMonth(d.getMonth()-i);meses3.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);}
+  const avgGas = meses3.map(m=>txs.filter(t=>t.type==='gasto'&&t.date.startsWith(m)).reduce((s,t)=>s+t.amount,0)).reduce((a,b)=>a+b,0)/3;
+  const fxTotal = fixedExps.filter(f=>f.active).reduce((s,f)=>s+f.amount,0);
+
+  const contexto = `Datos financieros del usuario:
+- Ingresos totales: ${fmt(ing)}
+- Gastos totales: ${fmt(gas)}
+- Balance: ${fmt(bal)}
+- Top categorías de gasto: ${topCats||'Sin datos'}
+- Gasto promedio últimos 3 meses: ${fmt(avgGas)}/mes
+- Gastos fijos mensuales: ${fmt(fxTotal)}/mes
+- Moneda: ${moneda}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:`Eres Kash, un asistente financiero personal amigable, directo y útil. Analizas los datos financieros del usuario y das consejos prácticos y personalizados. Responde siempre en español, de forma concisa (máximo 3-4 párrafos), usando los datos reales del usuario. Usa emojis ocasionalmente para hacer la respuesta más amigable.\n\n${contexto}`,
+        messages:[{role:'user',content:q}]
+      })
+    });
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'No pude procesar tu pregunta. Intenta de nuevo.';
+    const loadEl = $(loadId);
+    if(loadEl) loadEl.querySelector('.ai-bubble').innerHTML = reply.replace(/\n/g,'<br>');
+  } catch(e) {
+    const loadEl=$(loadId);
+    if(loadEl) loadEl.querySelector('.ai-bubble').innerHTML='Hubo un error. Verifica tu conexión e intenta de nuevo.';
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+/* ============================================================
+   AÑADIR DESDE CALENDARIO
+============================================================ */
+function initCalendarAdd() {
+  const btn = $('btn-add-from-cal'); if(!btn) return;
+  btn.addEventListener('click',()=>{
+    if(!calSelDay) return;
+    // Ir al formulario con la fecha del día seleccionado
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.querySelector('[data-tab="dashboard"]').classList.add('active');
+    $('tab-dashboard').classList.add('active');
+    $('f-date').value = calSelDay;
+    setTimeout(()=>{ $('tx-form').scrollIntoView({behavior:'smooth',block:'center'}); $('f-desc').focus(); },100);
+    icons();
+  });
+}
+
+/* ============================================================
+   INIT ANUAL + SIMULADOR + IA
+============================================================ */
+(function initAnnual(){
+  const tryInit = setInterval(()=>{
+    const yearSel = $('annual-year');
+    const aiSend  = $('btn-ai-send');
+    const aiInput = $('ai-input');
+    if(!yearSel) return;
+    clearInterval(tryInit);
+
+    // Año selector
+    fillYearSelect();
+    yearSel.addEventListener('change', renderAnual);
+
+    // AI
+    if(aiSend) aiSend.addEventListener('click',()=>askAI());
+    if(aiInput) aiInput.addEventListener('keydown',e=>{ if(e.key==='Enter') askAI(); });
+
+    // Simulador
+    initSimulator();
+
+    // Calendario add
+    initCalendarAdd();
+
+  }, 400);
 })();

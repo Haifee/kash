@@ -113,6 +113,7 @@
       <button class="tab-btn" data-tab="movements"><i data-lucide="list"></i> Movimientos</button>
       <button class="tab-btn" data-tab="budget"><i data-lucide="target"></i> Presupuestos</button>
       <button class="tab-btn" data-tab="summary"><i data-lucide="bar-chart-2"></i> Resumen</button>
+      <button class="tab-btn" data-tab="annual"><i data-lucide="calendar-range"></i> Anual</button>
       <button class="tab-btn" data-tab="shared"><i data-lucide="users"></i> Compartir</button>
       <button class="tab-btn" data-tab="settings"><i data-lucide="settings"></i> Ajustes</button>
     </nav>
@@ -275,7 +276,10 @@
       <section class="section panel" id="cal-detail" style="display:none">
         <div class="panel-header">
           <h2 class="panel-title" id="cal-detail-title">Movimientos del día</h2>
-          <button class="ghost-btn small" id="cal-detail-close">✕ Cerrar</button>
+          <div style="display:flex;gap:.5rem">
+            <button class="ghost-btn small" id="btn-add-from-cal">＋ Añadir</button>
+            <button class="ghost-btn small" id="cal-detail-close">✕ Cerrar</button>
+          </div>
         </div>
         <div id="cal-detail-list"></div>
       </section>
@@ -385,6 +389,130 @@
       </section>
     </div>
 
+
+
+    <!-- ===== TAB: ANUAL ===== -->
+    <div class="tab-content" id="tab-annual">
+
+      <!-- Balance anual -->
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Balance anual</h2>
+            <p class="panel-desc">Resumen completo del año</p>
+          </div>
+          <select id="annual-year" class="month-select"></select>
+        </div>
+
+        <!-- Métricas anuales -->
+        <div class="resumen-metrics" id="annual-metrics"></div>
+
+        <!-- Gráfica anual -->
+        <div class="chart-box" style="margin-top:1rem">
+          <h3>Ingresos vs Gastos por mes</h3>
+          <div class="chart-wrap"><canvas id="chart-annual"></canvas></div>
+        </div>
+
+        <!-- Gastos fijos vs variables -->
+        <div class="resumen-block" style="margin-top:1rem" id="annual-breakdown">
+          <h3>📊 Fijos vs Variables</h3>
+          <div id="annual-breakdown-content"></div>
+        </div>
+
+        <!-- Peores y mejores meses -->
+        <div class="resumen-block" id="annual-highlights">
+          <h3>🏆 Highlights del año</h3>
+          <div id="annual-highlights-content"></div>
+        </div>
+      </section>
+
+      <!-- Pronóstico -->
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Pronóstico</h2>
+            <p class="panel-desc">Proyección basada en tu historial</p>
+          </div>
+        </div>
+
+        <!-- Proyección mensual -->
+        <div class="resumen-metrics" id="forecast-metrics"></div>
+
+        <!-- Simulador de decisiones -->
+        <div class="resumen-block" style="margin-top:1rem">
+          <h3>🔮 Simulador de decisiones</h3>
+          <p style="font-size:.82rem;color:var(--text3);margin-bottom:1rem">Compara dos opciones y ve cuál te conviene más a largo plazo</p>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.75rem">
+            <div class="field">
+              <label for="sim-op1-name">Opción A</label>
+              <input type="text" id="sim-op1-name" placeholder="Ej: Piso con cocina" />
+            </div>
+            <div class="field">
+              <label for="sim-op1-cost">Costo mensual</label>
+              <div class="input-prefix"><span id="sim-symbol">€</span><input type="number" id="sim-op1-cost" placeholder="0.00" /></div>
+            </div>
+            <div class="field">
+              <label for="sim-op1-init">Costo inicial</label>
+              <div class="input-prefix"><span>€</span><input type="number" id="sim-op1-init" placeholder="0.00" /></div>
+            </div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.75rem">
+            <div class="field">
+              <label for="sim-op2-name">Opción B</label>
+              <input type="text" id="sim-op2-name" placeholder="Ej: Piso sin cocina" />
+            </div>
+            <div class="field">
+              <label for="sim-op2-cost">Costo mensual</label>
+              <div class="input-prefix"><span>€</span><input type="number" id="sim-op2-cost" placeholder="0.00" /></div>
+            </div>
+            <div class="field">
+              <label for="sim-op2-init">Costo inicial</label>
+              <div class="input-prefix"><span>€</span><input type="number" id="sim-op2-init" placeholder="0.00" /></div>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:.75rem">
+            <label for="sim-months">¿Cuántos meses planeas quedarte?</label>
+            <input type="number" id="sim-months" placeholder="Ej: 24" min="1" max="120" />
+          </div>
+          <button class="primary-btn" id="btn-simulate" style="margin-bottom:.75rem">Calcular</button>
+          <div id="sim-result" style="display:none" class="resumen-block"></div>
+        </div>
+
+        <!-- Gastos fijos proyección anual -->
+        <div class="resumen-block">
+          <h3>🏠 Lo que necesitas para vivir</h3>
+          <p style="font-size:.82rem;color:var(--text3);margin-bottom:1rem">Proyección anual de tus gastos fijos</p>
+          <div id="fixed-annual-projection"></div>
+        </div>
+      </section>
+
+      <!-- Asistente IA -->
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Asistente Kash ✨</h2>
+            <p class="panel-desc">Tu consejero financiero personal con IA</p>
+          </div>
+        </div>
+        <div id="ai-messages" class="ai-chat-box">
+          <div class="ai-msg ai-msg--bot">
+            <div class="ai-avatar">K</div>
+            <div class="ai-bubble">¡Hola! Soy tu asistente financiero. Puedo analizar tus datos y ayudarte a tomar mejores decisiones. ¿En qué te puedo ayudar?</div>
+          </div>
+        </div>
+        <div class="ai-suggestions">
+          <button class="ai-sugg" onclick="askAI('¿En qué categoría gasto más dinero?')">¿En qué gasto más?</button>
+          <button class="ai-sugg" onclick="askAI('¿Cuánto ahorro al mes en promedio?')">¿Cuánto ahorro?</button>
+          <button class="ai-sugg" onclick="askAI('Dame recomendaciones para ahorrar más')">¿Cómo ahorro más?</button>
+          <button class="ai-sugg" onclick="askAI('¿Cuál es mi pronóstico para el próximo mes?')">Pronóstico</button>
+        </div>
+        <div class="ai-input-row">
+          <input type="text" id="ai-input" placeholder="Pregunta sobre tus finanzas..." class="grow-input" />
+          <button class="primary-btn" id="btn-ai-send" style="width:auto;padding:0 1.25rem">Enviar</button>
+        </div>
+      </section>
+
+    </div>
 
     <!-- ===== TAB: COMPARTIR ===== -->
     <div class="tab-content" id="tab-shared">
