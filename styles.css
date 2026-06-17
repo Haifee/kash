@@ -917,3 +917,26 @@ body { padding-bottom: 6rem; }
 /* Texto del botón submit cambia */
 .form-mode-income #btn-submit-tx::before { content: '＋ '; }
 .form-mode-expense #btn-submit-tx::before { content: '－ '; }
+
+/* ============================================================
+   INDICADOR DE TIPO — MUY VISIBLE
+============================================================ */
+.tipo-indicator {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .85rem 1.1rem; border-radius: var(--r-md);
+  margin-bottom: 1rem; font-weight: 800; font-size: 1rem;
+  letter-spacing: .01em; transition: all .2s var(--ease);
+}
+.tipo-indicator--income {
+  background: var(--green-dim);
+  border: 2px solid var(--green);
+  color: var(--green);
+}
+.tipo-indicator--expense {
+  background: var(--red-dim);
+  border: 2px solid var(--red);
+  color: var(--red);
+}
+#tipo-indicator-icon {
+  font-size: 1.4rem; font-weight: 900; line-height: 1;
+}

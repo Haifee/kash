@@ -100,11 +100,14 @@ function setTipo(t){
   $('btn-gasto').classList.toggle('active',t==='gasto');
   fillCatSelect('f-cat',t);
 
-  // Cambia el color del formulario según el tipo
-  const form = $('tx-form');
-  if(form){
-    form.classList.remove('form-mode-income','form-mode-expense');
-    form.classList.add(t==='ingreso'?'form-mode-income':'form-mode-expense');
+  // Indicador visible
+  const ind = $('tipo-indicator');
+  const indIcon = $('tipo-indicator-icon');
+  const indText = $('tipo-indicator-text');
+  if(ind){
+    ind.className = t==='ingreso' ? 'tipo-indicator tipo-indicator--income' : 'tipo-indicator tipo-indicator--expense';
+    if(indIcon) indIcon.textContent = t==='ingreso' ? '↑' : '↓';
+    if(indText) indText.textContent = t==='ingreso' ? 'Estás añadiendo un INGRESO' : 'Estás añadiendo un GASTO';
   }
 
   // Cambia el texto del botón
