@@ -39,12 +39,12 @@
       <div id="auth-login" class="auth-form">
         <div class="field">
           <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" />
+          <input type="email" id="login-email" placeholder="" autocomplete="email" />
         </div>
         <div class="field">
           <label for="login-pass">Contraseña</label>
           <div class="input-prefix">
-            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" />
+            <input type="password" id="login-pass" placeholder="" autocomplete="current-password" />
           </div>
         </div>
         <p class="field-error" id="login-error"></p>
@@ -56,15 +56,15 @@
       <div id="auth-register" class="auth-form" style="display:none">
         <div class="field">
           <label for="reg-name">Nombre</label>
-          <input type="text" id="reg-name" placeholder="Tu nombre" autocomplete="name" />
+          <input type="text" id="reg-name" placeholder="" autocomplete="name" />
         </div>
         <div class="field">
           <label for="reg-email">Email</label>
-          <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" />
+          <input type="email" id="reg-email" placeholder="" autocomplete="email" />
         </div>
         <div class="field">
           <label for="reg-pass">Contraseña</label>
-          <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+          <input type="password" id="reg-pass" placeholder="" autocomplete="new-password" />
         </div>
         <p class="field-error" id="reg-error"></p>
         <button class="primary-btn" id="btn-register">Crear cuenta</button>
@@ -168,7 +168,7 @@
           <div class="form-grid">
             <div class="field">
               <label for="f-desc">Descripción</label>
-              <input type="text" id="f-desc" placeholder="Ej: Supermercado" autocomplete="off" />
+              <input type="text" id="f-desc" placeholder="" autocomplete="off" />
             </div>
             <div class="field">
               <label for="f-amount">Importe</label>
@@ -215,7 +215,7 @@
           <div class="form-grid">
             <div class="field">
               <label for="fx-desc">Nombre</label>
-              <input type="text" id="fx-desc" placeholder="Ej: Netflix" autocomplete="off" />
+              <input type="text" id="fx-desc" placeholder="" autocomplete="off" />
             </div>
             <div class="field">
               <label for="fx-amount">Importe</label>
@@ -445,7 +445,7 @@
           <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.75rem">
             <div class="field">
               <label for="sim-op1-name">Opción A</label>
-              <input type="text" id="sim-op1-name" placeholder="Ej: Opción A" />
+              <input type="text" id="sim-op1-name" placeholder="" />
             </div>
             <div class="field">
               <label for="sim-op1-cost">Costo mensual</label>
@@ -459,7 +459,7 @@
           <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.75rem">
             <div class="field">
               <label for="sim-op2-name">Opción B</label>
-              <input type="text" id="sim-op2-name" placeholder="Ej: Opción B" />
+              <input type="text" id="sim-op2-name" placeholder="" />
             </div>
             <div class="field">
               <label for="sim-op2-cost">Costo mensual</label>
@@ -472,7 +472,7 @@
           </div>
           <div class="field" style="margin-bottom:.75rem">
             <label for="sim-months">¿Cuántos meses planeas quedarte?</label>
-            <input type="number" id="sim-months" placeholder="Ej: 24" min="1" max="120" />
+            <input type="number" id="sim-months" placeholder="" min="1" max="120" />
           </div>
           <button class="primary-btn" id="btn-simulate" style="margin-bottom:.75rem">Calcular</button>
           <div id="sim-result" style="display:none" class="resumen-block"></div>
@@ -507,7 +507,7 @@
           <button class="ai-sugg" onclick="askAI('¿Cuál es mi pronóstico para el próximo mes?')">Pronóstico</button>
         </div>
         <div class="ai-input-row">
-          <input type="text" id="ai-input" placeholder="Pregunta sobre tus finanzas..." class="grow-input" />
+          <input type="text" id="ai-input" placeholder="" class="grow-input" />
           <button class="primary-btn" id="btn-ai-send" style="width:auto;padding:0 1.25rem">Enviar</button>
         </div>
       </section>
@@ -567,7 +567,7 @@
             <div style="display:flex;gap:.6rem">
               <div class="field" style="flex:1">
                 <label for="invite-email">Email</label>
-                <input type="email" id="invite-email" placeholder="email@ejemplo.com" />
+                <input type="email" id="invite-email" placeholder="" />
               </div>
               <div class="field" style="justify-content:flex-end">
                 <label>&nbsp;</label>
@@ -608,7 +608,7 @@
           <div class="profile-info">
             <div class="field" style="margin-bottom:.75rem">
               <label for="profile-name">Nombre</label>
-              <input type="text" id="profile-name" placeholder="Tu nombre" />
+              <input type="text" id="profile-name" placeholder="" />
             </div>
             <button class="ghost-btn" id="btn-save-profile">Guardar cambios</button>
           </div>
@@ -624,7 +624,7 @@
         <div id="cat-list" class="chip-list"></div>
         <div class="cat-add-row">
           <input type="text" id="cat-emoji" placeholder="😀" maxlength="2" class="emoji-input" />
-          <input type="text" id="cat-name" placeholder="Nombre de categoría" class="grow-input" />
+          <input type="text" id="cat-name" placeholder="" class="grow-input" />
           <button class="ghost-btn" id="btn-add-cat">Añadir</button>
         </div>
         <p class="field-error" id="cat-error"></p>
