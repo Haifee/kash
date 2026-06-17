@@ -1214,6 +1214,48 @@ function initSimulator() {
   });
 }
 
+
+/* --- Análisis financiero local inteligente --- */
+function analizarFinanzas(q, {ing, gas, bal, bycat, topCats, avgGas, fxTotal}) {
+  const q2 = q.toLowerCase();
+  const pct = ing>0?((bal/ing)*100).toFixed(1):0;
+  const top = Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+  const topCat = top[0];
+
+  if(q2.includes('gasto') && (q2.includes('más')||q2.includes('mas')||q2.includes('mayor'))) {
+    if(!topCat) return '📊 Aún no tienes gastos registrados. ¡Empieza añadiendo tus primeros movimientos!';
+    const pctTop = gas>0?(topCat[1]/gas*100).toFixed(1):0;
+    return `📊 Tu mayor gasto es <strong>${topCat[0]}</strong> con <strong>${fmt(topCat[1])}</strong>, que representa el ${pctTop}% de tus gastos totales.<br><br>${+pctTop>40?'⚠️ Esa categoría consume una parte importante de tu presupuesto. Considera si puedes reducirla.':'✅ La distribución parece razonable. Sigue así.'}`;
+  }
+  if(q2.includes('ahorro') || q2.includes('ahorra')) {
+    if(!ing) return '💡 Añade tus ingresos para que pueda calcular tu tasa de ahorro.';
+    return `💰 Actualmente tienes un balance de <strong>${fmt(bal)}</strong>.<br><br>Tu tasa de ahorro es del <strong>${pct}%</strong> ${+pct>=20?'🌟 ¡Excelente! Estás por encima del 20% recomendado.':+pct>0?'💛 Intenta llegar al 20% reduciendo gastos variables.':'🚨 Estás gastando más de lo que ingresas. Revisa tus gastos urgentemente.'}<br><br>Promedio mensual de gasto: <strong>${fmt(avgGas)}</strong>.`;
+  }
+  if(q2.includes('pronóstico')||q2.includes('pronostico')||q2.includes('próximo')||q2.includes('siguiente')) {
+    if(!ing) return '💡 Necesitas registrar al menos 1 mes de datos para generar un pronóstico.';
+    const proj12 = bal*12;
+    return `🔮 Basado en tu historial:<br><br>• Ingreso estimado próximo mes: <strong>${fmt(ing/Math.max(new Set(txs.map(t=>t.date.slice(0,7))).size,1))}</strong><br>• Gasto estimado próximo mes: <strong>${fmt(avgGas)}</strong><br>• Ahorro proyectado en 1 año: <strong style="color:${proj12>=0?'var(--green)':'var(--red)'}">${fmt(proj12)}</strong><br><br>${proj12>=0?'✅ Vas por buen camino. Mantén el ritmo.':'⚠️ Si sigues a este ritmo, tendrás un déficit. Considera reducir gastos.'}`;
+  }
+  if(q2.includes('recomend')||q2.includes('consejo')||q2.includes('mejor')) {
+    const recs = [];
+    if(+pct<20&&ing>0) recs.push(`💛 Tu tasa de ahorro es ${pct}%. Intenta llegar al 20% reduciendo gastos en <strong>${topCat?.[0]||'la categoría más cara'}</strong>.`);
+    if(fxTotal>ing*0.5&&ing>0) recs.push(`🏠 Tus gastos fijos (<strong>${fmt(fxTotal)}/mes</strong>) superan el 50% de tus ingresos. Evalúa si puedes reducir alguno.`);
+    if(topCat&&gas>0&&topCat[1]/gas>0.5) recs.push(`📌 <strong>${topCat[0]}</strong> es el 50%+ de tus gastos. Diversifica o reduce en esta categoría.`);
+    if(bal>=0) recs.push(`✅ Tu balance es positivo (<strong>${fmt(bal)}</strong>). Considera invertir parte del ahorro.`);
+    if(!recs.length) recs.push('✅ Tus finanzas parecen estar en buen estado. ¡Sigue registrando todos tus movimientos para mejores análisis!');
+    return recs.join('<br><br>');
+  }
+  if(q2.includes('fijo')||q2.includes('recurrente')) {
+    if(!fxTotal) return '💡 No tienes gastos fijos configurados. Ve a la pestaña Inicio y añade tus gastos recurrentes (alquiler, suscripciones, etc.)';
+    return `🔁 Tus gastos fijos mensuales son <strong>${fmt(fxTotal)}</strong>, lo que equivale a <strong>${fmt(fxTotal*12)}</strong> al año.<br><br>${ing>0?`Representan el <strong>${(fxTotal/ing*100).toFixed(1)}%</strong> de tus ingresos.${fxTotal/ing>0.5?' ⚠️ Es un porcentaje alto. Revisa si puedes eliminar alguno.':' ✅ Porcentaje razonable.'}`:''}`; 
+  }
+  if(q2.includes('balance')||q2.includes('situación')||q2.includes('situacion')||q2.includes('estado')) {
+    return `📊 <strong>Tu situación financiera actual:</strong><br><br>• Ingresos totales: <strong style="color:var(--green)">${fmt(ing)}</strong><br>• Gastos totales: <strong style="color:var(--red)">${fmt(gas)}</strong><br>• Balance: <strong style="color:${bal>=0?'var(--accent)':'var(--red)'}">${fmt(bal)}</strong><br>• Tasa de ahorro: <strong>${pct}%</strong><br>• Gastos fijos/mes: <strong>${fmt(fxTotal)}</strong><br><br>${+pct>=20?'🌟 ¡Excelente situación financiera!':+pct>0?'💛 Situación estable, pero puedes mejorar tu ahorro.':'🚨 Situación de déficit. Necesitas reducir gastos urgentemente.'}`;
+  }
+  // Default
+  return `🤔 Puedo ayudarte con:<br><br>• <strong>¿En qué gasto más?</strong> — análisis por categoría<br>• <strong>¿Cuánto ahorro?</strong> — tasa de ahorro<br>• <strong>Pronóstico</strong> — proyección del próximo mes<br>• <strong>Recomendaciones</strong> — consejos personalizados<br>• <strong>¿Cuáles son mis gastos fijos?</strong> — proyección anual<br>• <strong>¿Cuál es mi balance?</strong> — situación general<br><br>¡Pregúntame cualquiera de estas!`;
+}
+
 /* ============================================================
    ASISTENTE IA
 ============================================================ */
@@ -1260,23 +1302,12 @@ async function askAI(question) {
 - Moneda: ${moneda}`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        system:`Eres Kash, un asistente financiero personal amigable, directo y útil. Analizas los datos financieros del usuario y das consejos prácticos y personalizados. Responde siempre en español, de forma concisa (máximo 3-4 párrafos), usando los datos reales del usuario. Usa emojis ocasionalmente para hacer la respuesta más amigable.\n\n${contexto}`,
-        messages:[{role:'user',content:q}]
-      })
-    });
-    const data = await response.json();
-    const reply = data.content?.[0]?.text || 'No pude procesar tu pregunta. Intenta de nuevo.';
+    const reply = analizarFinanzas(q, {ing, gas, bal, bycat, topCats, avgGas, fxTotal});
     const loadEl = $(loadId);
     if(loadEl) loadEl.querySelector('.ai-bubble').innerHTML = reply.replace(/\n/g,'<br>');
   } catch(e) {
     const loadEl=$(loadId);
-    if(loadEl) loadEl.querySelector('.ai-bubble').innerHTML='Hubo un error. Verifica tu conexión e intenta de nuevo.';
+    if(loadEl) loadEl.querySelector('.ai-bubble').innerHTML='No pude analizar tus datos. Intenta de nuevo.';
   }
   msgs.scrollTop=msgs.scrollHeight;
 }
