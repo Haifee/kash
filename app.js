@@ -99,6 +99,21 @@ function setTipo(t){
   $('btn-ingreso').classList.toggle('active',t==='ingreso');
   $('btn-gasto').classList.toggle('active',t==='gasto');
   fillCatSelect('f-cat',t);
+
+  // Cambia el color del formulario según el tipo
+  const form = $('tx-form');
+  if(form){
+    form.classList.remove('form-mode-income','form-mode-expense');
+    form.classList.add(t==='ingreso'?'form-mode-income':'form-mode-expense');
+  }
+
+  // Cambia el texto del botón
+  const btn = $('btn-submit-tx');
+  if(btn) btn.textContent = t==='ingreso' ? 'Añadir ingreso' : 'Añadir gasto';
+
+  // Cambia el símbolo de moneda de color
+  const sym = $('amount-symbol');
+  if(sym) sym.style.color = t==='ingreso' ? 'var(--green)' : 'var(--red)';
 }
 
 function fillCatSelect(selId,t){
@@ -1317,16 +1332,56 @@ async function askAI(question) {
 ============================================================ */
 function initCalendarAdd() {
   const btn = $('btn-add-from-cal'); if(!btn) return;
+  let calTipo = 'ingreso';
+
   btn.addEventListener('click',()=>{
     if(!calSelDay) return;
-    // Ir al formulario con la fecha del día seleccionado
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    document.querySelector('[data-tab="dashboard"]').classList.add('active');
-    $('tab-dashboard').classList.add('active');
-    $('f-date').value = calSelDay;
-    setTimeout(()=>{ $('tx-form').scrollIntoView({behavior:'smooth',block:'center'}); $('f-desc').focus(); },100);
-    icons();
+    const form = $('cal-mini-form');
+    const isOpen = form.style.display !== 'none';
+    form.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? '＋ Añadir' : '✕ Cancelar';
+    if(!isOpen){
+      fillCatSelect('cal-f-cat', calTipo);
+      const dateEl = $('cal-form-date');
+      if(dateEl) dateEl.textContent = fmtFecha(calSelDay);
+      const symEl = $('cal-amount-symbol');
+      if(symEl) symEl.textContent = moneda==='USD'?'$':'€';
+      $('cal-f-desc').focus();
+    }
+  });
+
+  // Toggle tipo en mini form
+  $('cal-btn-ingreso').addEventListener('click',()=>{
+    calTipo='ingreso';
+    $('cal-btn-ingreso').classList.add('active');
+    $('cal-btn-gasto').classList.remove('active');
+    fillCatSelect('cal-f-cat','ingreso');
+  });
+  $('cal-btn-gasto').addEventListener('click',()=>{
+    calTipo='gasto';
+    $('cal-btn-gasto').classList.add('active');
+    $('cal-btn-ingreso').classList.remove('active');
+    fillCatSelect('cal-f-cat','gasto');
+  });
+
+  // Submit mini form
+  $('btn-cal-submit').addEventListener('click', async()=>{
+    const desc   = $('cal-f-desc').value.trim();
+    const amount = parseFloat($('cal-f-amount').value);
+    const cat    = $('cal-f-cat').value;
+    const errEl  = $('cal-form-error');
+    if(!desc)         { errEl.textContent='Escribe una descripción.'; return; }
+    if(!amount||amount<=0){ errEl.textContent='Importe inválido.'; return; }
+    errEl.textContent='';
+    await addTransaction({type:calTipo, desc, amount, cat, date:calSelDay});
+    // Reset form
+    $('cal-f-desc').value='';
+    $('cal-f-amount').value='';
+    $('cal-mini-form').style.display='none';
+    $('btn-add-from-cal').textContent='＋ Añadir';
+    // Refresh calendar detail
+    showCalDetail(calSelDay);
+    renderCalendar();
   });
 }
 

@@ -886,3 +886,34 @@ body { padding-bottom: 6rem; }
 .fixed-proj-vals  { text-align:right; }
 .fixed-proj-month { font-size:.72rem; color:var(--text3); }
 .fixed-proj-year  { font-size:.9rem; font-weight:800; color:var(--amber); font-family:var(--mono); }
+
+/* ============================================================
+   FORMULARIO DINÁMICO — Verde para ingresos, Rojo para gastos
+============================================================ */
+.form-mode-income .input-prefix span,
+.form-mode-income .field label { color: var(--green) !important; }
+.form-mode-income .field input:focus,
+.form-mode-income .field select:focus {
+  border-color: var(--green) !important;
+  box-shadow: 0 0 0 3px rgba(0,229,160,.15) !important;
+}
+.form-mode-income #btn-submit-tx {
+  background: linear-gradient(135deg, #00A872, #00E5A0) !important;
+  box-shadow: 0 4px 20px rgba(0,229,160,.3) !important;
+}
+
+.form-mode-expense .input-prefix span,
+.form-mode-expense .field label { color: var(--red) !important; }
+.form-mode-expense .field input:focus,
+.form-mode-expense .field select:focus {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px rgba(255,77,106,.15) !important;
+}
+.form-mode-expense #btn-submit-tx {
+  background: linear-gradient(135deg, #CC2244, #FF4D6A) !important;
+  box-shadow: 0 4px 20px rgba(255,77,106,.3) !important;
+}
+
+/* Texto del botón submit cambia */
+.form-mode-income #btn-submit-tx::before { content: '＋ '; }
+.form-mode-expense #btn-submit-tx::before { content: '－ '; }
