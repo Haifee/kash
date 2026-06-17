@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kash — Control Financiero</title>
+  <meta name="theme-color" content="#7C6BFF" id="theme-color">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kash">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- =================== AUTH SCREEN =================== -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="header-logo">K</div>
+        <h1 class="auth-brand"><span class="logo-k">K</span>ash</h1>
+      </div>
+      <p class="auth-tagline">Tu dinero. Bajo control.</p>
+
+      <div id="auth-tabs" class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Iniciar sesión</button>
+        <button class="auth-tab" data-tab="register">Crear cuenta</button>
+      </div>
+
+      <!-- Login -->
+      <div id="auth-login" class="auth-form">
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="login-pass">Contraseña</label>
+          <div class="input-prefix">
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+        </div>
+        <p class="field-error" id="login-error"></p>
+        <button class="primary-btn" id="btn-login">Entrar</button>
+        <button class="ghost-btn forgot-btn" id="btn-forgot">¿Olvidaste tu contraseña?</button>
+      </div>
+
+      <!-- Register -->
+      <div id="auth-register" class="auth-form" style="display:none">
+        <div class="field">
+          <label for="reg-name">Nombre</label>
+          <input type="text" id="reg-name" placeholder="Tu nombre" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="reg-pass">Contraseña</label>
+          <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+        </div>
+        <p class="field-error" id="reg-error"></p>
+        <button class="primary-btn" id="btn-register">Crear cuenta</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== MAIN APP =================== -->
+  <div id="app" style="display:none">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="header-logo">K</div>
+        <h1><span class="logo-k">K</span>ash</h1>
+      </div>
+      <div class="header-actions">
+        <div class="user-pill" id="user-pill">
+          <span id="user-avatar" class="user-avatar"></span>
+          <span id="user-name-header"></span>
+        </div>
+        <button class="icon-btn" id="theme-toggle" title="Cambiar tema" aria-label="Cambiar tema">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+        <div class="seg-control">
+          <button class="seg-btn active" data-currency="EUR">€ EUR</button>
+          <button class="seg-btn" data-currency="USD">$ USD</button>
+        </div>
+        <button class="ghost-btn" id="btn-export">
+          <i data-lucide="download" style="width:13px;height:13px;margin-right:4px;vertical-align:-1px"></i>CSV
+        </button>
+        <button class="ghost-btn" id="btn-export-pdf">
+          <i data-lucide="file-text" style="width:13px;height:13px;margin-right:4px;vertical-align:-1px"></i>PDF
+        </button>
+        <button class="icon-btn" id="btn-logout" title="Cerrar sesión" aria-label="Cerrar sesión">
+          <i data-lucide="log-out"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- NAV TABS -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="dashboard"><i data-lucide="layout-dashboard"></i> Inicio</button>
+      <button class="tab-btn" data-tab="calendar"><i data-lucide="calendar"></i> Calendario</button>
+      <button class="tab-btn" data-tab="movements"><i data-lucide="list"></i> Movimientos</button>
+      <button class="tab-btn" data-tab="budget"><i data-lucide="target"></i> Presupuestos</button>
+      <button class="tab-btn" data-tab="summary"><i data-lucide="bar-chart-2"></i> Resumen</button>
+      <button class="tab-btn" data-tab="shared"><i data-lucide="users"></i> Compartir</button>
+      <button class="tab-btn" data-tab="settings"><i data-lucide="settings"></i> Ajustes</button>
+    </nav>
+
+    <!-- LOADING -->
+    <div id="app-loading" class="app-loading">
+      <div class="loading-spinner"></div>
+      <p>Cargando tus datos...</p>
+    </div>
+
+    <!-- ===== TAB: DASHBOARD ===== -->
+    <div class="tab-content active" id="tab-dashboard">
+      <section class="section summary-grid">
+        <div class="card card--income">
+          <span class="card-icon"><i data-lucide="arrow-up-right"></i></span>
+          <p class="card-label">Ingresos</p>
+          <p class="card-value" id="total-income">€0</p>
+          <p class="card-sub" id="sub-income">0 movimientos</p>
+        </div>
+        <div class="card card--expense">
+          <span class="card-icon"><i data-lucide="arrow-down-right"></i></span>
+          <p class="card-label">Gastos</p>
+          <p class="card-value" id="total-expense">€0</p>
+          <p class="card-sub" id="sub-expense">0 movimientos</p>
+        </div>
+        <div class="card card--balance">
+          <span class="card-icon"><i data-lucide="wallet"></i></span>
+          <p class="card-label">Balance</p>
+          <p class="card-value" id="total-balance">€0</p>
+          <p class="card-sub" id="sub-balance">Este mes</p>
+        </div>
+        <div class="card card--fixed">
+          <span class="card-icon"><i data-lucide="repeat"></i></span>
+          <p class="card-label">Gastos fijos</p>
+          <p class="card-value" id="total-fixed">€0</p>
+          <p class="card-sub" id="sub-fixed">0 activos</p>
+        </div>
+      </section>
+
+      <!-- Add transaction -->
+      <section class="section panel">
+        <h2 class="panel-title">Añadir movimiento</h2>
+        <div class="type-toggle">
+          <button class="toggle-btn active" id="btn-ingreso" data-type="ingreso">
+            <i data-lucide="plus-circle" style="width:15px;height:15px"></i> Ingreso
+          </button>
+          <button class="toggle-btn" id="btn-gasto" data-type="gasto">
+            <i data-lucide="minus-circle" style="width:15px;height:15px"></i> Gasto
+          </button>
+        </div>
+        <form id="tx-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="f-desc">Descripción</label>
+              <input type="text" id="f-desc" placeholder="Ej: Supermercado" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="f-amount">Importe</label>
+              <div class="input-prefix">
+                <span id="amount-symbol">€</span>
+                <input type="number" id="f-amount" placeholder="0.00" min="0.01" step="0.01" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-cat">Categoría</label>
+              <select id="f-cat"></select>
+            </div>
+            <div class="field">
+              <label for="f-date">Fecha</label>
+              <input type="date" id="f-date" />
+            </div>
+          </div>
+          <div class="photo-attach-row">
+            <label class="photo-label" for="f-photo">
+              <i data-lucide="paperclip" style="width:14px;height:14px"></i>
+              <span id="photo-label-text">Adjuntar factura (opcional)</span>
+            </label>
+            <input type="file" id="f-photo" accept="image/*" capture="environment" style="display:none" />
+            <button type="button" class="photo-clear-btn" id="photo-clear" style="display:none">✕ Quitar</button>
+          </div>
+          <div id="photo-preview-wrap" style="display:none">
+            <img id="photo-preview" class="photo-preview-img" alt="Vista previa" />
+          </div>
+          <p class="field-error" id="form-error"></p>
+          <button type="submit" class="primary-btn" id="btn-submit-tx">Añadir movimiento</button>
+        </form>
+      </section>
+
+      <!-- Fixed expenses -->
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Gastos fijos del mes</h2>
+            <p class="panel-desc">Se descuentan automáticamente cada mes.</p>
+          </div>
+          <button class="ghost-btn" id="btn-toggle-fixed">＋ Añadir</button>
+        </div>
+        <div id="fixed-form-wrap" class="sub-panel" style="display:none">
+          <div class="form-grid">
+            <div class="field">
+              <label for="fx-desc">Nombre</label>
+              <input type="text" id="fx-desc" placeholder="Ej: Netflix" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="fx-amount">Importe</label>
+              <div class="input-prefix">
+                <span id="fx-symbol">€</span>
+                <input type="number" id="fx-amount" placeholder="0.00" min="0.01" step="0.01" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="fx-cat">Categoría</label>
+              <select id="fx-cat"></select>
+            </div>
+            <div class="field">
+              <label for="fx-day">Día del mes</label>
+              <input type="number" id="fx-day" placeholder="1-28" min="1" max="28" />
+            </div>
+          </div>
+          <p class="field-error" id="fixed-error"></p>
+          <button class="primary-btn" id="btn-add-fixed">Guardar gasto fijo</button>
+        </div>
+        <div id="fixed-list"></div>
+        <p class="empty-hint" id="fixed-empty">No tienes gastos fijos configurados.</p>
+      </section>
+
+      <!-- Charts -->
+      <section class="section panel">
+        <h2 class="panel-title">Estadísticas</h2>
+        <div class="charts-grid">
+          <div class="chart-box">
+            <h3>Gastos por categoría</h3>
+            <div class="chart-wrap"><canvas id="chart-cats"></canvas></div>
+            <p class="empty-hint" id="empty-cats">Sin gastos aún</p>
+          </div>
+          <div class="chart-box">
+            <h3>Evolución mensual</h3>
+            <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+            <p class="empty-hint" id="empty-monthly">Sin datos aún</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== TAB: CALENDAR ===== -->
+    <div class="tab-content" id="tab-calendar">
+      <section class="section panel">
+        <div class="cal-header">
+          <button class="icon-btn" id="cal-prev" aria-label="Mes anterior"><i data-lucide="chevron-left"></i></button>
+          <h2 class="cal-title" id="cal-title">Enero 2025</h2>
+          <button class="icon-btn" id="cal-next" aria-label="Mes siguiente"><i data-lucide="chevron-right"></i></button>
+          <button class="ghost-btn small" id="cal-today">Hoy</button>
+        </div>
+        <div class="cal-legend">
+          <span class="leg-dot leg-income"></span>Ingreso
+          <span class="leg-dot leg-expense"></span>Gasto
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </section>
+      <section class="section panel" id="cal-detail" style="display:none">
+        <div class="panel-header">
+          <h2 class="panel-title" id="cal-detail-title">Movimientos del día</h2>
+          <button class="ghost-btn small" id="cal-detail-close">✕ Cerrar</button>
+        </div>
+        <div id="cal-detail-list"></div>
+      </section>
+    </div>
+
+    <!-- ===== TAB: MOVEMENTS ===== -->
+    <div class="tab-content" id="tab-movements">
+      <section class="section panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Movimientos</h2>
+          <button class="ghost-btn small" id="btn-clear-filters">
+            <i data-lucide="x" style="width:11px;height:11px;vertical-align:-1px;margin-right:2px"></i>Limpiar
+          </button>
+        </div>
+        <div class="filter-row">
+          <div class="field">
+            <label for="filter-month">Mes</label>
+            <input type="month" id="filter-month" />
+          </div>
+          <div class="field">
+            <label for="filter-type">Tipo</label>
+            <select id="filter-type">
+              <option value="todos">Todos</option>
+              <option value="ingreso">Ingresos</option>
+              <option value="gasto">Gastos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-cat">Categoría</label>
+            <select id="filter-cat"><option value="todas">Todas</option></select>
+          </div>
+        </div>
+        <div id="tx-list"></div>
+        <p class="empty-hint visible" id="empty-msg">No hay movimientos. ¡Añade el primero!</p>
+      </section>
+    </div>
+
+    <!-- ===== TAB: BUDGET ===== -->
+    <div class="tab-content" id="tab-budget">
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Presupuestos</h2>
+            <p class="panel-desc">Define cuánto quieres gastar por categoría cada mes.</p>
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <select id="budget-mes" class="month-select"></select>
+            <button class="ghost-btn" id="btn-add-budget">＋ Añadir</button>
+          </div>
+        </div>
+        <div id="budget-form-wrap" class="sub-panel" style="display:none">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field">
+              <label for="bud-cat">Categoría</label>
+              <select id="bud-cat"></select>
+            </div>
+            <div class="field">
+              <label for="bud-amount">Presupuesto</label>
+              <div class="input-prefix">
+                <span id="bud-symbol">€</span>
+                <input type="number" id="bud-amount" placeholder="0.00" min="0.01" step="0.01" />
+              </div>
+            </div>
+            <div class="field" style="justify-content:flex-end">
+              <label>&nbsp;</label>
+              <button class="primary-btn" id="btn-save-budget" style="height:42px">Guardar</button>
+            </div>
+          </div>
+          <p class="field-error" id="budget-error"></p>
+        </div>
+        <div id="budget-list"></div>
+        <p class="empty-hint visible" id="budget-empty">No hay presupuestos para este mes.</p>
+      </section>
+    </div>
+
+    <!-- ===== TAB: SUMMARY ===== -->
+    <div class="tab-content" id="tab-summary">
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Resumen mensual</h2>
+            <p class="panel-desc">Estadísticas y recomendaciones automáticas</p>
+          </div>
+          <select id="resumen-mes" class="month-select"></select>
+        </div>
+        <div class="resumen-metrics" id="resumen-metrics"></div>
+        <div class="saving-bar-wrap" id="saving-wrap" style="display:none">
+          <div class="saving-bar-labels">
+            <span>Tasa de ahorro</span>
+            <span id="saving-pct" class="saving-pct-val">0%</span>
+          </div>
+          <div class="saving-bar-track"><div class="saving-bar-fill" id="saving-fill"></div></div>
+        </div>
+        <div class="resumen-block" id="top-cats-wrap" style="display:none">
+          <h3>🏆 Top categorías de gasto</h3>
+          <div id="top-cats"></div>
+        </div>
+        <div class="resumen-block" id="vs-wrap" style="display:none">
+          <h3>📊 Comparativa con el mes anterior</h3>
+          <div id="resumen-vs"></div>
+        </div>
+        <div class="resumen-block recs-block">
+          <h3>💡 Recomendaciones</h3>
+          <ul id="resumen-recs"></ul>
+        </div>
+        <p class="empty-hint visible" id="resumen-empty">No hay datos para este mes.</p>
+      </section>
+    </div>
+
+
+    <!-- ===== TAB: COMPARTIR ===== -->
+    <div class="tab-content" id="tab-shared">
+      <section class="section panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Espacio compartido</h2>
+            <p class="panel-desc">Comparte tus finanzas con tu pareja o familia (máx. 5 personas).</p>
+          </div>
+          <button class="ghost-btn" id="btn-create-space" style="display:none">＋ Crear espacio</button>
+        </div>
+
+        <!-- Sin espacio aún -->
+        <div id="no-space-wrap">
+          <div class="shared-empty">
+            <div class="shared-empty-icon">👫</div>
+            <h3>Sin espacio compartido</h3>
+            <p>Crea un espacio para invitar a tu pareja o familia y ver las finanzas juntos.</p>
+            <button class="primary-btn" id="btn-create-space-main" style="max-width:280px;margin:0 auto">Crear espacio compartido</button>
+          </div>
+        </div>
+
+        <!-- Espacio activo -->
+        <div id="space-wrap" style="display:none">
+
+          <!-- Info del espacio -->
+          <div class="space-info-card" id="space-info-card">
+            <div class="space-info-header">
+              <div class="space-avatar">👨‍👩‍👧</div>
+              <div>
+                <div class="space-name" id="space-name-display"></div>
+                <div class="space-role" id="space-role-display"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggle: mis datos / compartidos -->
+          <div class="type-toggle" style="margin-bottom:1.25rem" id="shared-toggle-wrap">
+            <button class="toggle-btn active" id="btn-view-personal">👤 Mis finanzas</button>
+            <button class="toggle-btn" id="btn-view-shared">👥 Compartido</button>
+          </div>
+
+          <!-- Miembros -->
+          <div class="shared-members-section">
+            <div class="shared-section-title">Miembros</div>
+            <div id="members-list"></div>
+          </div>
+
+          <!-- Invitar -->
+          <div id="invite-wrap" class="sub-panel" style="margin-top:1rem">
+            <div class="shared-section-title" style="margin-bottom:.75rem">Invitar persona</div>
+            <div style="display:flex;gap:.6rem">
+              <div class="field" style="flex:1">
+                <label for="invite-email">Email</label>
+                <input type="email" id="invite-email" placeholder="email@ejemplo.com" />
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <label>&nbsp;</label>
+                <button class="primary-btn" id="btn-invite" style="height:42px;width:auto;padding:0 1.25rem">Invitar</button>
+              </div>
+            </div>
+            <p class="field-error" id="invite-error"></p>
+          </div>
+
+          <!-- Invitación pendiente -->
+          <div id="pending-invite-wrap" style="display:none" class="sub-panel">
+            <div class="pending-invite">
+              <span>📬 Tienes una invitación pendiente</span>
+              <div style="display:flex;gap:.5rem;margin-top:.75rem">
+                <button class="primary-btn" id="btn-accept-invite" style="width:auto;padding:0 1rem">✓ Aceptar</button>
+                <button class="ghost-btn" id="btn-reject-invite">✕ Rechazar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen compartido -->
+          <div id="shared-summary" style="display:none;margin-top:1rem">
+            <div class="shared-section-title" style="margin-bottom:.75rem">Resumen del espacio</div>
+            <div class="resumen-metrics" id="shared-metrics"></div>
+            <div id="shared-tx-list" style="margin-top:.75rem"></div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== TAB: SETTINGS ===== -->
+    <div class="tab-content" id="tab-settings">
+      <section class="section panel">
+        <h2 class="panel-title">Mi perfil</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar"></div>
+          <div class="profile-info">
+            <div class="field" style="margin-bottom:.75rem">
+              <label for="profile-name">Nombre</label>
+              <input type="text" id="profile-name" placeholder="Tu nombre" />
+            </div>
+            <button class="ghost-btn" id="btn-save-profile">Guardar cambios</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <h2 class="panel-title">Mis categorías</h2>
+        <div class="type-toggle" style="margin-bottom:1rem">
+          <button class="toggle-btn active" id="cat-tab-ingreso">Ingresos</button>
+          <button class="toggle-btn" id="cat-tab-gasto">Gastos</button>
+        </div>
+        <div id="cat-list" class="chip-list"></div>
+        <div class="cat-add-row">
+          <input type="text" id="cat-emoji" placeholder="😀" maxlength="2" class="emoji-input" />
+          <input type="text" id="cat-name" placeholder="Nombre de categoría" class="grow-input" />
+          <button class="ghost-btn" id="btn-add-cat">Añadir</button>
+        </div>
+        <p class="field-error" id="cat-error"></p>
+      </section>
+
+      <section class="section panel">
+        <h2 class="panel-title">Datos y cuenta</h2>
+        <div class="settings-row">
+          <div>
+            <p class="settings-label">Exportar movimientos</p>
+            <p class="settings-desc">Descarga todos tus movimientos en CSV o PDF</p>
+          </div>
+          <div style="display:flex;gap:.5rem">
+          <button class="ghost-btn" id="btn-export2">
+            <i data-lucide="download" style="width:13px;height:13px;margin-right:4px;vertical-align:-1px"></i>CSV
+          </button>
+          <button class="ghost-btn" id="btn-export-pdf2">
+            <i data-lucide="file-text" style="width:13px;height:13px;margin-right:4px;vertical-align:-1px"></i>PDF
+          </button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <p class="settings-label danger-text">Cerrar sesión</p>
+            <p class="settings-desc">Salir de tu cuenta en este dispositivo</p>
+          </div>
+          <button class="ghost-btn danger-btn-ghost" id="btn-logout2">
+            <i data-lucide="log-out" style="width:13px;height:13px;margin-right:4px;vertical-align:-1px"></i>Salir
+          </button>
+        </div>
+      </section>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- FLOATING ACTION BUTTONS -->
+  <div class="fab-container">
+    <button class="fab fab-income" id="fab-income" title="Añadir ingreso">
+      <span class="fab-icon">＋</span>
+      <span class="fab-label">Ingreso</span>
+    </button>
+    <button class="fab fab-expense" id="fab-expense" title="Añadir gasto">
+      <span class="fab-icon">－</span>
+      <span class="fab-label">Gasto</span>
+    </button>
+  </div>
+
+  <!-- TOAST notifications -->
+  <div id="toast" class="toast"></div>
+
+  <!-- MODAL: eliminar -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon">🗑️</div>
+      <p class="modal-msg">¿Eliminar este movimiento?</p>
+      <p class="modal-sub">Esta acción no se puede deshacer.</p>
+      <div class="modal-actions">
+        <button class="primary-btn danger-btn" id="modal-confirm">Eliminar</button>
+        <button class="ghost-btn" id="modal-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: foto -->
+  <div class="modal-overlay" id="photo-modal">
+    <div class="modal photo-modal">
+      <p class="modal-msg">Factura adjunta</p>
+      <img id="photo-modal-img" class="photo-modal-img" alt="Factura" />
+      <button class="ghost-btn" id="photo-modal-close" style="margin-top:1rem;width:100%">Cerrar</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>if(window.lucide) lucide.createIcons();</script>
+</body>
+</html>
