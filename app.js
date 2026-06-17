@@ -808,6 +808,7 @@ function initAuth(){
   }
   $('btn-logout').addEventListener('click',logout);
   $('btn-logout2').addEventListener('click',logout);
+  const bl3=$('btn-logout3'); if(bl3) bl3.addEventListener('click',logout);
 }
 
 /* ============================================================
