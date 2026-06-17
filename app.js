@@ -796,10 +796,15 @@ function initAuth(){
     $('login-error').style.color='var(--green)';$('login-error').textContent='✓ Email enviado.';
   });
   async function logout(){
-    await sb.auth.signOut();
+    try {
+      await sb.auth.signOut();
+    } catch(e) { console.warn(e); }
     user=null;perfil=null;txs=[];cats={ingreso:[...CATS_DEFAULT.ingreso],gasto:[...CATS_DEFAULT.gasto]};
     fixedExps=[];presupuestos=[];espacioActual=null;miembros=[];
+    // Clear any cached session
+    localStorage.removeItem('sb-cstilmraomgwkcnukpyd-auth-token');
     showAuth();
+    showToast('Sesión cerrada');
   }
   $('btn-logout').addEventListener('click',logout);
   $('btn-logout2').addEventListener('click',logout);
