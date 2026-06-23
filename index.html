@@ -264,30 +264,64 @@
 
     <!-- ===== TAB: CALENDAR ===== -->
     <div class="tab-content" id="tab-calendar">
-      <section class="section panel">
-        <div class="cal-header">
-          <button class="icon-btn" id="cal-prev" aria-label="Mes anterior"><i data-lucide="chevron-left"></i></button>
-          <h2 class="cal-title" id="cal-title">Enero 2025</h2>
-          <button class="icon-btn" id="cal-next" aria-label="Mes siguiente"><i data-lucide="chevron-right"></i></button>
-          <button class="ghost-btn small" id="cal-today">Hoy</button>
-        </div>
-        <div class="cal-legend">
-          <span class="leg-dot leg-income"></span>Ingreso
-          <span class="leg-dot leg-expense"></span>Gasto
-        </div>
-        <div class="cal-grid" id="cal-grid"></div>
-      </section>
-      <section class="section panel" id="cal-detail" style="display:none">
-        <div class="panel-header">
-          <h2 class="panel-title" id="cal-detail-title">Movimientos del día</h2>
-          <div style="display:flex;gap:.5rem">
-            <button class="ghost-btn small" id="btn-add-from-cal">＋ Añadir</button>
-            <button class="ghost-btn small" id="cal-detail-close">✕ Cerrar</button>
-          </div>
-        </div>
 
-        <!-- Mini formulario en calendario -->
-        <div id="cal-mini-form" class="sub-panel" style="display:none">
+      <!-- Nav mes -->
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev"><i data-lucide="chevron-left"></i></button>
+        <div class="cal-nav-center">
+          <span class="cal-nav-prev" id="cal-prev-label"></span>
+          <span class="cal-nav-cur" id="cal-title">Enero 2025</span>
+          <span class="cal-nav-next" id="cal-next-label"></span>
+        </div>
+        <button class="cal-nav-btn" id="cal-next"><i data-lucide="chevron-right"></i></button>
+      </div>
+
+      <!-- Tabs Ingresos / Saldo / Gastos -->
+      <div class="cal-view-tabs">
+        <button class="cal-view-btn active" id="cal-view-income" data-view="income">
+          <i data-lucide="trending-up" style="width:14px;height:14px"></i> Ingresos
+        </button>
+        <button class="cal-view-btn" id="cal-view-balance" data-view="balance">
+          <i data-lucide="wallet" style="width:14px;height:14px"></i> Saldo
+        </button>
+        <button class="cal-view-btn" id="cal-view-expense" data-view="expense">
+          <i data-lucide="trending-down" style="width:14px;height:14px"></i> Gastos
+        </button>
+      </div>
+
+      <!-- Categorías del mes -->
+      <div class="cal-cats-bar" id="cal-cats-bar"></div>
+
+      <!-- Calendario -->
+      <div class="section">
+        <div class="cal-grid-new" id="cal-grid"></div>
+        <div class="cal-legend-new">
+          <span><span class="leg-dot leg-income"></span>Ingresos</span>
+          <span><span class="leg-dot" style="background:var(--surface2);border:1px solid var(--border)"></span>Hoy</span>
+          <span><span class="leg-dot leg-expense"></span>Gastos</span>
+        </div>
+      </div>
+
+      <!-- Botones añadir -->
+      <div class="cal-add-btns">
+        <button class="cal-add-btn cal-add-income" id="cal-fab-income">
+          <i data-lucide="plus-circle"></i> Añadir ingresos
+        </button>
+        <button class="cal-add-btn cal-add-settings" id="cal-fab-settings">
+          <i data-lucide="settings"></i>
+        </button>
+        <button class="cal-add-btn cal-add-expense" id="cal-fab-expense">
+          <i data-lucide="minus-circle"></i> Añadir gastos
+        </button>
+      </div>
+
+      <!-- Mini formulario -->
+      <div id="cal-mini-form" class="section" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title" id="cal-form-date-title">Añadir movimiento</h2>
+            <button class="ghost-btn small" id="cal-mini-close">✕</button>
+          </div>
           <div class="type-toggle" style="margin-bottom:.75rem">
             <button class="toggle-btn active" id="cal-btn-ingreso" data-type="ingreso">＋ Ingreso</button>
             <button class="toggle-btn" id="cal-btn-gasto" data-type="gasto">－ Gasto</button>
@@ -310,11 +344,20 @@
             </div>
           </div>
           <p class="field-error" id="cal-form-error"></p>
-          <button class="primary-btn" id="btn-cal-submit">Añadir al día <span id="cal-form-date"></span></button>
+          <button class="primary-btn" id="btn-cal-submit">Añadir</button>
         </div>
+      </div>
 
-        <div id="cal-detail-list"></div>
-      </section>
+      <!-- Transacciones de hoy / día seleccionado -->
+      <div class="section">
+        <div class="cal-today-section">
+          <div class="cal-today-header" id="cal-detail-title">Transacciones de hoy</div>
+          <div id="cal-detail-list">
+            <p style="text-align:center;padding:1.5rem;color:var(--text3);font-size:.85rem">No hay transacciones hoy. Pulsa para añadir.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ===== TAB: MOVEMENTS ===== -->

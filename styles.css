@@ -940,3 +940,123 @@ body { padding-bottom: 6rem; }
 #tipo-indicator-icon {
   font-size: 1.4rem; font-weight: 900; line-height: 1;
 }
+
+/* ============================================================
+   NUEVO DISEÑO CALENDARIO — estilo app referencia
+============================================================ */
+
+/* Nav mes */
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--accent); padding: 1rem 1.25rem;
+  position: sticky; top: 57px; z-index: 40;
+}
+.cal-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: none; background: rgba(255,255,255,.2);
+  color: #fff; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background var(--t) var(--ease);
+}
+.cal-nav-btn:hover { background: rgba(255,255,255,.35); }
+.cal-nav-btn svg { width: 20px; height: 20px; stroke: #fff; }
+.cal-nav-center { text-align: center; flex: 1; }
+.cal-nav-prev, .cal-nav-next { font-size: .72rem; color: rgba(255,255,255,.6); display: block; }
+.cal-nav-cur { font-size: 1.1rem; font-weight: 800; color: #fff; display: block; letter-spacing: -.02em; }
+
+/* View tabs */
+.cal-view-tabs {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.cal-view-btn {
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .75rem; border: none; background: transparent;
+  font-size: .82rem; font-weight: 700; font-family: var(--font);
+  cursor: pointer; color: var(--text3);
+  border-bottom: 3px solid transparent;
+  transition: all var(--t) var(--ease);
+}
+.cal-view-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+#cal-view-income.active  { color: var(--green); border-bottom-color: var(--green); }
+#cal-view-expense.active { color: var(--red); border-bottom-color: var(--red); }
+
+/* Categorías bar */
+.cal-cats-bar {
+  background: var(--surface); padding: .75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.cal-cat-row {
+  display: flex; align-items: center; gap: .75rem; font-size: .82rem;
+}
+.cal-cat-icon { font-size: 1rem; width: 22px; flex-shrink: 0; }
+.cal-cat-name { width: 110px; font-weight: 600; color: var(--text2); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-cat-bar-wrap { flex: 1; }
+.cal-cat-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.cal-cat-fill  { height: 100%; border-radius: 99px; }
+.cal-cat-amt   { font-size: .8rem; font-weight: 700; font-family: var(--mono); min-width: 70px; text-align: right; flex-shrink: 0; }
+
+/* Calendario nuevo */
+.cal-grid-new {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px; padding: .75rem 0;
+}
+.cal-day-new {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-radius: 50%; cursor: pointer; position: relative;
+  transition: all var(--t) var(--ease);
+  font-size: .88rem; font-weight: 600; color: var(--text2);
+}
+.cal-day-new:hover { background: var(--surface2); }
+.cal-day-new.today { background: var(--surface2); border: 2px solid var(--accent); color: var(--accent); font-weight: 800; }
+.cal-day-new.selected { background: var(--accent); color: #fff; }
+.cal-day-new.other-month { opacity: .25; }
+.cal-day-new.has-expense .cal-day-dot { background: var(--red); }
+.cal-day-new.has-income  .cal-day-dot { background: var(--green); }
+.cal-day-new.has-both    .cal-day-dot { background: var(--accent); }
+.cal-day-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  position: absolute; bottom: 4px;
+}
+.cal-day-name-new {
+  text-align: center; font-size: .68rem; font-weight: 700;
+  color: var(--text3); padding: .3rem 0;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.cal-legend-new {
+  display: flex; justify-content: center; gap: 1.5rem;
+  font-size: .75rem; color: var(--text3); padding: .5rem 0;
+}
+
+/* Botones añadir */
+.cal-add-btns {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: .5rem; padding: .75rem 1.25rem;
+  background: var(--accent); position: sticky; bottom: 5rem; z-index: 30;
+}
+.cal-add-btn {
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .7rem; border-radius: var(--r-md); border: none;
+  font-size: .82rem; font-weight: 800; font-family: var(--font);
+  cursor: pointer; transition: all var(--t) var(--ease);
+}
+.cal-add-btn svg { width: 16px; height: 16px; }
+.cal-add-income  { background: var(--green); color: #fff; }
+.cal-add-expense { background: var(--red); color: #fff; }
+.cal-add-settings{ background: rgba(255,255,255,.2); color: #fff; width: 44px; border-radius: 50%; }
+.cal-add-income:hover  { opacity: .9; }
+.cal-add-expense:hover { opacity: .9; }
+
+/* Transacciones de hoy */
+.cal-today-section {
+  background: var(--surface); border-radius: var(--r-lg);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.cal-today-header {
+  background: var(--accent); color: #fff;
+  font-size: .88rem; font-weight: 800; padding: .85rem 1.1rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.cal-today-header::before { content: '≡'; font-size: 1.1rem; }

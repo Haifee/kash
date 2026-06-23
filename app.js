@@ -383,32 +383,113 @@ function renderChartMensual(){
 }
 
 /* --- RENDER: CALENDAR --- */
+let calView = 'expense'; // 'income' | 'balance' | 'expense'
+
 function renderCalendar(){
   const MM=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  $('cal-title').textContent=`${MM[calMonth]} ${calYear}`;
-  const grid=$('cal-grid'), today=hoy();
+  const MMshort=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Nav labels
+  const prevD=new Date(calYear,calMonth-1,1), nextD=new Date(calYear,calMonth+1,1);
+  const titleEl=$('cal-title'); if(titleEl) titleEl.textContent=`${MM[calMonth]} ${calYear}`;
+  const prevL=$('cal-prev-label'); if(prevL) prevL.textContent=`${MMshort[prevD.getMonth()]} ${prevD.getFullYear()}`;
+  const nextL=$('cal-next-label'); if(nextL) nextL.textContent=`${MMshort[nextD.getMonth()]} ${nextD.getFullYear()}`;
+
+  const grid=$('cal-grid'); if(!grid) return;
+  const today=hoy();
+
+  // Build day data
   const byDay={};
-  txs.forEach(t=>{const[y,m,d]=t.date.split('-');if(parseInt(y)===calYear&&parseInt(m)-1===calMonth){if(!byDay[d])byDay[d]={ing:0,gas:0};byDay[d][t.type==='ingreso'?'ing':'gas']+=t.amount;}});
+  txs.forEach(t=>{
+    const[y,m,d]=t.date.split('-');
+    if(parseInt(y)===calYear&&parseInt(m)-1===calMonth){
+      if(!byDay[d])byDay[d]={ing:0,gas:0};
+      byDay[d][t.type==='ingreso'?'ing':'gas']+=t.amount;
+    }
+  });
+
   const firstDay=new Date(calYear,calMonth,1).getDay();
   const offset=(firstDay===0)?6:firstDay-1;
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
   const daysInPrev=new Date(calYear,calMonth,0).getDate();
   const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-  let html=dias.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
-  for(let i=offset-1;i>=0;i--) html+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
+
+  let html=dias.map(d=>`<div class="cal-day-name-new">${d}</div>`).join('');
+
+  for(let i=offset-1;i>=0;i--)
+    html+=`<div class="cal-day-new other-month"><span>${daysInPrev-i}</span></div>`;
+
   for(let d=1;d<=daysInMonth;d++){
     const ds=String(d).padStart(2,'0');
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${ds}`;
     const isToday=dateStr===today, isSel=calSelDay===dateStr;
     const info=byDay[ds];
-    let dots='',amounts='';
-    if(info){if(info.ing>0){dots+=`<div class="cal-dot income"></div>`;amounts+=`<span class="cal-amt income">+${fmt(info.ing)}</span>`;}if(info.gas>0){dots+=`<div class="cal-dot expense"></div>`;amounts+=`<span class="cal-amt expense">−${fmt(info.gas)}</span>`;}}
-    html+=`<div class="cal-day${isToday?' today':''}${isSel?' selected':''}" data-date="${dateStr}"><div class="cal-day-num">${d}</div><div class="cal-dots">${dots}</div><div class="cal-amounts">${amounts}</div></div>`;
+    let cls='cal-day-new';
+    if(isToday) cls+=' today';
+    if(isSel)   cls+=' selected';
+    let dot='';
+    if(info){
+      if(info.ing>0&&info.gas>0){ cls+=' has-both'; dot='<div class="cal-day-dot"></div>'; }
+      else if(info.ing>0){ cls+=' has-income'; dot='<div class="cal-day-dot"></div>'; }
+      else if(info.gas>0){ cls+=' has-expense'; dot='<div class="cal-day-dot"></div>'; }
+    }
+    html+=`<div class="${cls}" data-date="${dateStr}"><span>${d}</span>${dot}</div>`;
   }
+
   const total=Math.ceil((offset+daysInMonth)/7)*7;
-  for(let d=1;d<=total-offset-daysInMonth;d++) html+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  for(let d=1;d<=total-offset-daysInMonth;d++)
+    html+=`<div class="cal-day-new other-month"><span>${d}</span></div>`;
+
   grid.innerHTML=html;
-  grid.querySelectorAll('.cal-day:not(.other-month)').forEach(cell=>cell.addEventListener('click',()=>{calSelDay=cell.dataset.date;renderCalendar();showCalDetail(calSelDay);}));
+  grid.querySelectorAll('.cal-day-new:not(.other-month)').forEach(cell=>
+    cell.addEventListener('click',()=>{
+      calSelDay=cell.dataset.date;
+      renderCalendar();
+      showCalDetail(calSelDay);
+    })
+  );
+
+  // Render category bars
+  renderCalCats();
+
+  // Show today's transactions by default
+  if(!calSelDay) showCalDetail(today);
+}
+
+function renderCalCats(){
+  const bar=$('cal-cats-bar'); if(!bar) return;
+  const mes=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const tMes=txs.filter(t=>t.date.startsWith(mes));
+
+  let data=[];
+  if(calView==='income'){
+    const bycat={};
+    tMes.filter(t=>t.type==='ingreso').forEach(t=>{bycat[t.cat]=(bycat[t.cat]||0)+t.amount;});
+    data=Object.entries(bycat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  } else {
+    const bycat={};
+    tMes.filter(t=>t.type==='gasto').forEach(t=>{bycat[t.cat]=(bycat[t.cat]||0)+t.amount;});
+    data=Object.entries(bycat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  }
+
+  if(!data.length){ bar.innerHTML='<p style="font-size:.78rem;color:var(--text3);text-align:center;padding:.5rem">Sin datos este mes</p>'; return; }
+
+  const total=data.reduce((s,[,a])=>s+a,0);
+  const max=data[0][1];
+  const colors=['#6C63FF','#FF4D6A','#00E5A0','#FFB830','#3B82F6'];
+
+  bar.innerHTML=data.map(([cat,amt],i)=>{
+    const pct=total>0?(amt/total*100).toFixed(1):0;
+    const barW=max>0?(amt/max*100).toFixed(1):0;
+    return `<div class="cal-cat-row">
+      <span class="cal-cat-icon">${getEmoji(cat)}</span>
+      <span class="cal-cat-name">${esc(cat)}</span>
+      <div class="cal-cat-bar-wrap">
+        <div class="cal-cat-track"><div class="cal-cat-fill" style="width:${barW}%;background:${colors[i]}"></div></div>
+      </div>
+      <span class="cal-cat-amt" style="color:${colors[i]}">${pct}%<br><small style="color:var(--text3)">${fmt(amt)}</small></span>
+    </div>`;
+  }).join('');
 }
 
 function showCalDetail(dateStr){
@@ -1420,4 +1501,73 @@ function initCalendarAdd() {
     initCalendarAdd();
 
   }, 400);
+})();
+
+/* ============================================================
+   NUEVO CALENDARIO — eventos de vista y FABs
+============================================================ */
+(function initNewCalendar(){
+  const tryInit = setInterval(()=>{
+    const vIncome  = $('cal-view-income');
+    const fabInc   = $('cal-fab-income');
+    const fabExp   = $('cal-fab-expense');
+    const fabSet   = $('cal-fab-settings');
+    const miniClose= $('cal-mini-close');
+    if(!vIncome) return;
+    clearInterval(tryInit);
+
+    // View tabs
+    ['cal-view-income','cal-view-balance','cal-view-expense'].forEach(id=>{
+      const btn=$(id); if(!btn) return;
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        calView = btn.dataset.view;
+        renderCalCats();
+      });
+    });
+
+    // FAB income
+    if(fabInc) fabInc.addEventListener('click',()=>{
+      const form=$('cal-mini-form');
+      form.style.display='block';
+      $('cal-btn-ingreso').classList.add('active');
+      $('cal-btn-gasto').classList.remove('active');
+      fillCatSelect('cal-f-cat','ingreso');
+      const sym=$('cal-amount-symbol'); if(sym) sym.textContent=moneda==='USD'?'$':'€';
+      const dateTitle=$('cal-form-date-title');
+      if(dateTitle) dateTitle.textContent=`Añadir ingreso — ${fmtFecha(calSelDay||hoy())}`;
+      form.scrollIntoView({behavior:'smooth'});
+      $('cal-f-desc').focus();
+    });
+
+    // FAB expense
+    if(fabExp) fabExp.addEventListener('click',()=>{
+      const form=$('cal-mini-form');
+      form.style.display='block';
+      $('cal-btn-gasto').classList.add('active');
+      $('cal-btn-ingreso').classList.remove('active');
+      fillCatSelect('cal-f-cat','gasto');
+      const sym=$('cal-amount-symbol'); if(sym) sym.textContent=moneda==='USD'?'$':'€';
+      const dateTitle=$('cal-form-date-title');
+      if(dateTitle) dateTitle.textContent=`Añadir gasto — ${fmtFecha(calSelDay||hoy())}`;
+      form.scrollIntoView({behavior:'smooth'});
+      $('cal-f-desc').focus();
+    });
+
+    // FAB settings → go to settings tab
+    if(fabSet) fabSet.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+      document.querySelector('[data-tab="settings"]').classList.add('active');
+      $('tab-settings').classList.add('active');
+      renderCatList(); icons();
+    });
+
+    // Close mini form
+    if(miniClose) miniClose.addEventListener('click',()=>{
+      $('cal-mini-form').style.display='none';
+    });
+
+  }, 300);
 })();
