@@ -1013,8 +1013,15 @@ function initAuth(){
   $('photo-modal').addEventListener('click',e=>{if(e.target.id==='photo-modal')$('photo-modal').classList.remove('visible');});
 
   // Calendario
-  $('cal-prev').addEventListener('click',()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelDay=null;renderCalendar();});
-  $('cal-next').addEventListener('click',()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelDay=null;renderCalendar();});
+  // Calendar navigation - use event delegation on document
+  document.addEventListener('click', e=>{
+    if(e.target.closest('#cal-prev')){
+      calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelDay=null;renderCalendar();
+    }
+    if(e.target.closest('#cal-next')){
+      calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelDay=null;renderCalendar();
+    }
+  });
   // cal-today removed in new design
   // cal-detail-close removed in new design
 
