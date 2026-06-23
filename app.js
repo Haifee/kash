@@ -1013,10 +1013,10 @@ function initAuth(){
   $('photo-modal').addEventListener('click',e=>{if(e.target.id==='photo-modal')$('photo-modal').classList.remove('visible');});
 
   // Calendario
-  $('cal-prev').addEventListener('click',()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelDay=null;$('cal-detail').style.display='none';renderCalendar();});
-  $('cal-next').addEventListener('click',()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelDay=null;$('cal-detail').style.display='none';renderCalendar();});
-  $('cal-today').addEventListener('click',()=>{calYear=new Date().getFullYear();calMonth=new Date().getMonth();calSelDay=null;$('cal-detail').style.display='none';renderCalendar();});
-  $('cal-detail-close').addEventListener('click',()=>{calSelDay=null;$('cal-detail').style.display='none';renderCalendar();});
+  $('cal-prev').addEventListener('click',()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelDay=null;renderCalendar();});
+  $('cal-next').addEventListener('click',()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelDay=null;renderCalendar();});
+  // cal-today removed in new design
+  // cal-detail-close removed in new design
 
   // Perfil
   $('btn-save-profile').addEventListener('click',async()=>{
