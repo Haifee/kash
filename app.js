@@ -212,7 +212,12 @@ async function addTransaction(txData){
     photo:txData.photo||null,moneda
   }).select().single();
   if(btn){ btn.disabled=false; btn.textContent='Añadir movimiento'; }
-  if(error){ showToast('Error al guardar','error'); console.error(error); return; }
+  if(error){ 
+    showToast('Error: '+error.message,'error'); 
+    console.error('Supabase error:',error); 
+    alert('Error al guardar: '+error.message+' | Code: '+error.code);
+    return; 
+  }
   txs.unshift({...data,desc:data.descripcion,amount:parseFloat(data.amount),fixedId:data.fixed_id});
   showToast('✓ Movimiento añadido');
   checkBudgetAlert(txData.cat,txData.amount);
