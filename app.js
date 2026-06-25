@@ -206,6 +206,17 @@ async function aplicarGastosFijos(){
 async function addTransaction(txData){
   const btn=$('btn-submit-tx');
   if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+
+  // Refresh session before inserting
+  const {data:sessionData} = await sb.auth.getSession();
+  if(!sessionData?.session){
+    if(btn){ btn.disabled=false; btn.textContent='Añadir movimiento'; }
+    showToast('Sesión expirada. Inicia sesión de nuevo.','error');
+    setTimeout(()=>showAuth(), 1500);
+    return;
+  }
+  user = sessionData.session.user;
+
   const {data,error}=await sb.from('transacciones').insert({
     user_id:user.id,type:txData.type,descripcion:txData.desc,
     amount:txData.amount,cat:txData.cat,date:txData.date,
